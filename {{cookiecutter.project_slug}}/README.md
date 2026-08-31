@@ -2,10 +2,10 @@
 
 ## Features
 
-- **FastAPI** with Python 3.8
+- **Django** + **Django REST Framework** with Python 3.14
 - **React 16** with Typescript, Redux, and react-router
 - Postgres
-- SqlAlchemy with Alembic for migrations
+- Django ORM with Django migrations
 - Pytest for backend tests
 - Jest for frontend tests
 - Perttier/Eslint (with Airbnb style guide)
@@ -25,18 +25,15 @@ Starting the project with hot-reloading enabled
 docker-compose up -d
 ```
 
-To run the alembic migrations (for the users table):
+To run the database migrations (for the users table):
 
 ```bash
-docker-compose run --rm backend alembic upgrade head
+docker-compose run --rm backend python manage.py migrate
 ```
 
 And navigate to http://localhost:{{cookiecutter.port}}
 
 _Note: If you see an Nginx error at first with a `502: Bad Gateway` page, you may have to wait for webpack to build the development server (the nginx container builds much more quickly)._
-
-Auto-generated docs will be at
-http://localhost:{{cookiecutter.port}}/api/docs
 
 ### Rebuilding containers:
 
@@ -79,20 +76,20 @@ npm test
 
 ## Migrations
 
-Migrations are run using alembic. To run all migrations:
+Migrations are run using Django's migration framework. To run all migrations:
 
 ```
-docker-compose run --rm backend alembic upgrade head
+docker-compose run --rm backend python manage.py migrate
 ```
 
-To create a new migration:
+To create a new migration after changing the models:
 
 ```
-alembic revision -m "create users table"
+docker-compose run --rm backend python manage.py makemigrations
 ```
 
-And fill in `upgrade` and `downgrade` methods. For more information see
-[Alembic's official documentation](https://alembic.sqlalchemy.org/en/latest/tutorial.html#create-a-migration-script).
+For more information see
+[Django's migrations documentation](https://docs.djangoproject.com/en/stable/topics/migrations/).
 
 ## Testing
 
@@ -134,16 +131,15 @@ docker-compose logs -f name_of_service # frontend|backend|db
 
 ```
 backend
-└── app
-    ├── alembic
-    │   └── versions # where migrations are located
-    ├── api
-    │   └── api_v1
-    │       └── endpoints
-    ├── core    # config
-    ├── db      # db models
-    ├── tests   # pytest
-    └── main.py # entrypoint to backend
+├── app
+│   ├── core        # security & celery config
+│   ├── users       # user model, serializers, views
+│   │   └── migrations # where migrations are located
+│   ├── tests       # pytest
+│   ├── settings.py # configuration
+│   ├── urls.py     # root URLconf
+│   └── wsgi.py     # entrypoint to backend
+└── manage.py       # Django management CLI
 
 frontend
 └── public

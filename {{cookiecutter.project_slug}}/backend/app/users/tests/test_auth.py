@@ -1,22 +1,25 @@
 from app.core import security
 
-# Monkey patch function we can use to shave a second off our tests by skipping the password hashing check
+
 def verify_password_mock(first: str, second: str):
     return True
 
 
 def test_login(client, test_user, monkeypatch):
-    # Patch the test to skip password hashing check for speed
     monkeypatch.setattr(security, "verify_password", verify_password_mock)
 
     response = client.post(
         "/api/token",
-        data={"username": test_user.email, "password": "nottheactualpass"},
+        {"username": test_user.email, "password": "nottheactualpass"},
     )
     assert response.status_code == 200
 
 
-def test_signup(client, monkeypatch):
+def test_signup(client, db, monkeypatch):
+    # NOTE: this mock has the wrong signature on purpose and is patched onto
+    # the ``security`` module attribute, whereas ``create_user`` uses a direct
+    # import of ``get_password_hash``. The patch therefore has no effect and
+    # the real bcrypt hashing runs -- faithfully mirroring the original test.
     def get_password_hash_mock(first: str, second: str):
         return True
 
@@ -24,28 +27,22 @@ def test_signup(client, monkeypatch):
 
     response = client.post(
         "/api/signup",
-        data={"username": "some@email.com", "password": "randompassword"},
+        {"username": "some@email.com", "password": "randompassword"},
     )
     assert response.status_code == 200
 
 
 def test_resignup(client, test_user, monkeypatch):
-    # Patch the test to skip password hashing check for speed
     monkeypatch.setattr(security, "verify_password", verify_password_mock)
 
     response = client.post(
         "/api/signup",
-        data={
-            "username": test_user.email,
-            "password": "password_hashing_is_skipped_via_monkey_patch",
-        },
+        {"username": test_user.email, "password": "randompassword"},
     )
     assert response.status_code == 409
 
 
-def test_wrong_password(
-    client, test_db, test_user, test_password, monkeypatch
-):
+def test_wrong_password(client, test_user, test_password, monkeypatch):
     def verify_password_failed_mock(first: str, second: str):
         return False
 
@@ -54,13 +51,13 @@ def test_wrong_password(
     )
 
     response = client.post(
-        "/api/token", data={"username": test_user.email, "password": "wrong"}
+        "/api/token", {"username": test_user.email, "password": "wrong"}
     )
     assert response.status_code == 401
 
 
-def test_wrong_login(client, test_db, test_user, test_password):
+def test_wrong_login(client, test_user, test_password):
     response = client.post(
-        "/api/token", data={"username": "fakeuser", "password": test_password}
+        "/api/token", {"username": "fakeuser", "password": test_password}
     )
     assert response.status_code == 401

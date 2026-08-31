@@ -1,0 +1,12 @@
+[run]
+source = app
+omit =
+    app/asgi.py
+    app/wsgi.py
+    app/initial_data.py
+    app/*/migrations/*
+    app/tests/*
+    app/*/tests/*
+
+[report]
+show_missing = True
