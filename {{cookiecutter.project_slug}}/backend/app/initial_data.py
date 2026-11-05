@@ -1,26 +1,28 @@
-#!/usr/bin/env python3
+import os
 
-from app.db.session import get_db
-from app.db.crud import create_user
-from app.db.schemas import UserCreate
-from app.db.session import SessionLocal
+import django
 
 
 def init() -> None:
-    db = SessionLocal()
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "app.settings")
+    django.setup()
 
+    from app.core.auth import create_user, get_user_by_email
+
+    email = "{{cookiecutter.superuser_email}}"
+    if get_user_by_email(email):
+        print(f"Superuser {email} already exists")
+        return
+
+    print(f"Creating superuser {email}")
     create_user(
-        db,
-        UserCreate(
-            email="{{cookiecutter.superuser_email}}",
-            password="{{cookiecutter.superuser_password}}",
-            is_active=True,
-            is_superuser=True,
-        ),
+        email=email,
+        password="{{cookiecutter.superuser_password}}",
+        is_active=True,
+        is_superuser=True,
     )
+    print("Superuser created")
 
 
 if __name__ == "__main__":
-    print("Creating superuser {{cookiecutter.superuser_email}}")
     init()
-    print("Superuser created")

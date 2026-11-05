@@ -1,3 +1,10 @@
 fastapi-react
 node_modules/
 package-lock.json
+
+# Python / Django
+__pycache__/
+*.pyc
+db.sqlite3
+.pytest_cache/
+.coverage
